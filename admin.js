@@ -133,6 +133,14 @@ function exhibitRowTemplate(exhibit) {
   wrap.className = "exhibit-row";
   wrap.dataset.id = exhibit.id;
 
+  const imagePreviewHtml = exhibit.imageUrl
+    ? `<a href="${exhibit.imageUrl}" target="_blank" rel="noreferrer">檢視目前圖片</a>`
+    : `<span class="preview-disabled">目前沒有圖片</span>`;
+
+  const audioPreviewHtml = exhibit.audioUrl
+    ? `<a href="${exhibit.audioUrl}" target="_blank" rel="noreferrer">檢視目前語音</a>`
+    : `<span class="preview-disabled">目前沒有語音</span>`;
+
   wrap.innerHTML = `
     <div class="exhibit-head">
       <strong>${exhibit.name || "未命名展區"}</strong>
@@ -155,8 +163,8 @@ function exhibitRowTemplate(exhibit) {
     </label>
 
     <div class="preview-links">
-      <a href="${exhibit.imageUrl || "#"}" target="_blank" rel="noreferrer">檢視目前圖片</a>
-      <a href="${exhibit.audioUrl || "#"}" target="_blank" rel="noreferrer">檢視目前語音</a>
+      ${imagePreviewHtml}
+      ${audioPreviewHtml}
     </div>
 
     <div class="row-actions">
