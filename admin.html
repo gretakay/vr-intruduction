@@ -14,10 +14,16 @@
     <main class="admin-shell">
       <section id="setupCard" class="panel login-panel hidden">
         <h1>首次系統設定</h1>
-        <p>第一次使用可直接在這裡設定 SHEET_ID、後台密碼與上傳資料夾。</p>
+        <p>第一次使用可直接在這裡設定 SHEET_ID、後台密碼與 GitHub 音檔儲存。</p>
         <form id="setupForm" class="stack-form">
           <input id="setupSheetIdInput" type="text" placeholder="SHEET_ID" required />
           <input id="setupDriveFolderIdInput" type="text" placeholder="DRIVE_FOLDER_ID（可留空）" />
+          <input id="setupGithubOwnerInput" type="text" placeholder="GITHUB_OWNER（例如 gretakay）" />
+          <input id="setupGithubRepoInput" type="text" placeholder="GITHUB_REPO（例如 vr-intruduction）" />
+          <input id="setupGithubBranchInput" type="text" placeholder="GITHUB_BRANCH（預設 main）" />
+          <input id="setupGithubAudioDirInput" type="text" placeholder="GITHUB_AUDIO_DIR（預設 assets/audio）" />
+          <input id="setupGithubPagesBaseUrlInput" type="url" placeholder="GITHUB_PAGES_BASE_URL（可留空）" />
+          <input id="setupGithubTokenInput" type="password" placeholder="GITHUB_TOKEN（repo 權限）" />
           <input id="setupPasswordInput" type="password" placeholder="設定後台密碼" required />
           <button class="action-btn" type="submit">儲存首次設定</button>
         </form>
@@ -68,6 +74,33 @@
             <input id="systemPasswordInput" type="password" placeholder="不修改可留空" />
           </label>
           <button id="saveSystemBtn" class="action-btn">儲存系統設定</button>
+        </div>
+
+        <div class="config-grid">
+          <label>
+            GITHUB_OWNER
+            <input id="systemGithubOwnerInput" type="text" placeholder="例如 gretakay" />
+          </label>
+          <label>
+            GITHUB_REPO
+            <input id="systemGithubRepoInput" type="text" placeholder="例如 vr-intruduction" />
+          </label>
+          <label>
+            GITHUB_BRANCH
+            <input id="systemGithubBranchInput" type="text" placeholder="預設 main" />
+          </label>
+          <label>
+            GITHUB_AUDIO_DIR
+            <input id="systemGithubAudioDirInput" type="text" placeholder="預設 assets/audio" />
+          </label>
+          <label>
+            GITHUB_PAGES_BASE_URL
+            <input id="systemGithubPagesBaseUrlInput" type="url" placeholder="可留空，預設 owner.github.io/repo" />
+          </label>
+          <label>
+            GITHUB_TOKEN（留空不變更）
+            <input id="systemGithubTokenInput" type="password" placeholder="repo 權限 token" />
+          </label>
         </div>
 
         <div class="list-actions">

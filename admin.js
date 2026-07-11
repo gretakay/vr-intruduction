@@ -2,6 +2,12 @@
 const setupFormEl = document.getElementById("setupForm");
 const setupSheetIdInputEl = document.getElementById("setupSheetIdInput");
 const setupDriveFolderIdInputEl = document.getElementById("setupDriveFolderIdInput");
+const setupGithubOwnerInputEl = document.getElementById("setupGithubOwnerInput");
+const setupGithubRepoInputEl = document.getElementById("setupGithubRepoInput");
+const setupGithubBranchInputEl = document.getElementById("setupGithubBranchInput");
+const setupGithubAudioDirInputEl = document.getElementById("setupGithubAudioDirInput");
+const setupGithubPagesBaseUrlInputEl = document.getElementById("setupGithubPagesBaseUrlInput");
+const setupGithubTokenInputEl = document.getElementById("setupGithubTokenInput");
 const setupPasswordInputEl = document.getElementById("setupPasswordInput");
 const loginCardEl = document.getElementById("loginCard");
 const adminPanelEl = document.getElementById("adminPanel");
@@ -13,6 +19,12 @@ const saveConfigBtnEl = document.getElementById("saveConfigBtn");
 const systemSheetIdInputEl = document.getElementById("systemSheetIdInput");
 const systemDriveFolderIdInputEl = document.getElementById("systemDriveFolderIdInput");
 const systemPasswordInputEl = document.getElementById("systemPasswordInput");
+const systemGithubOwnerInputEl = document.getElementById("systemGithubOwnerInput");
+const systemGithubRepoInputEl = document.getElementById("systemGithubRepoInput");
+const systemGithubBranchInputEl = document.getElementById("systemGithubBranchInput");
+const systemGithubAudioDirInputEl = document.getElementById("systemGithubAudioDirInput");
+const systemGithubPagesBaseUrlInputEl = document.getElementById("systemGithubPagesBaseUrlInput");
+const systemGithubTokenInputEl = document.getElementById("systemGithubTokenInput");
 const saveSystemBtnEl = document.getElementById("saveSystemBtn");
 const addExhibitBtnEl = document.getElementById("addExhibitBtn");
 const logoutBtnEl = document.getElementById("logoutBtn");
@@ -90,12 +102,30 @@ function isMp3File(file) {
 function fillSystemInputs(system) {
   const sheetId = system?.sheetId || "";
   const driveFolderId = system?.driveFolderId || "";
+  const githubOwner = system?.githubOwner || "";
+  const githubRepo = system?.githubRepo || "";
+  const githubBranch = system?.githubBranch || "main";
+  const githubAudioDir = system?.githubAudioDir || "assets/audio";
+  const githubPagesBaseUrl = system?.githubPagesBaseUrl || "";
 
   setupSheetIdInputEl.value = sheetId;
   setupDriveFolderIdInputEl.value = driveFolderId;
+  setupGithubOwnerInputEl.value = githubOwner;
+  setupGithubRepoInputEl.value = githubRepo;
+  setupGithubBranchInputEl.value = githubBranch;
+  setupGithubAudioDirInputEl.value = githubAudioDir;
+  setupGithubPagesBaseUrlInputEl.value = githubPagesBaseUrl;
+  setupGithubTokenInputEl.value = "";
+
   systemSheetIdInputEl.value = sheetId;
   systemDriveFolderIdInputEl.value = driveFolderId;
   systemPasswordInputEl.value = "";
+  systemGithubOwnerInputEl.value = githubOwner;
+  systemGithubRepoInputEl.value = githubRepo;
+  systemGithubBranchInputEl.value = githubBranch;
+  systemGithubAudioDirInputEl.value = githubAudioDir;
+  systemGithubPagesBaseUrlInputEl.value = githubPagesBaseUrl;
+  systemGithubTokenInputEl.value = "";
 }
 
 async function postAction(payload) {
@@ -319,7 +349,7 @@ function exhibitRowTemplate(exhibit) {
       await postAction(payload);
       await fetchStore();
       const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
-      showNotice(`檔案已上傳並寫入 Google Sheet（${seconds} 秒）`);
+      showNotice(`檔案已上傳（圖片到 Drive、音檔到 GitHub）並寫入 Google Sheet（${seconds} 秒）`);
     } catch (error) {
       showNotice(error.message || "上傳失敗", "error");
     } finally {
@@ -365,7 +395,7 @@ function exhibitRowTemplate(exhibit) {
         assetType: "audio"
       });
       await fetchStore();
-      showNotice("音檔已刪除，雲端檔案已同步刪除");
+      showNotice("音檔已刪除，GitHub 檔案已同步刪除");
     } catch (error) {
       showNotice(error.message || "刪除音檔失敗", "error");
     }
@@ -420,9 +450,16 @@ saveSystemBtnEl.addEventListener("click", async () => {
       token: getToken(),
       sheetId: systemSheetIdInputEl.value,
       driveFolderId: systemDriveFolderIdInputEl.value,
-      adminPassword: systemPasswordInputEl.value
+      adminPassword: systemPasswordInputEl.value,
+      githubOwner: systemGithubOwnerInputEl.value,
+      githubRepo: systemGithubRepoInputEl.value,
+      githubBranch: systemGithubBranchInputEl.value,
+      githubAudioDir: systemGithubAudioDirInputEl.value,
+      githubPagesBaseUrl: systemGithubPagesBaseUrlInputEl.value,
+      githubToken: systemGithubTokenInputEl.value
     });
     systemPasswordInputEl.value = "";
+    systemGithubTokenInputEl.value = "";
     showNotice("系統設定已更新");
   } catch (error) {
     showNotice(error.message || "系統設定儲存失敗", "error");
@@ -456,13 +493,25 @@ setupFormEl.addEventListener("submit", async (event) => {
       action: "saveSystemSettings",
       sheetId: setupSheetIdInputEl.value,
       driveFolderId: setupDriveFolderIdInputEl.value,
+      githubOwner: setupGithubOwnerInputEl.value,
+      githubRepo: setupGithubRepoInputEl.value,
+      githubBranch: setupGithubBranchInputEl.value,
+      githubAudioDir: setupGithubAudioDirInputEl.value,
+      githubPagesBaseUrl: setupGithubPagesBaseUrlInputEl.value,
+      githubToken: setupGithubTokenInputEl.value,
       adminPassword: setupPasswordInputEl.value
     });
 
     setupPasswordInputEl.value = "";
+    setupGithubTokenInputEl.value = "";
     fillSystemInputs({
       sheetId: setupSheetIdInputEl.value,
-      driveFolderId: setupDriveFolderIdInputEl.value
+      driveFolderId: setupDriveFolderIdInputEl.value,
+      githubOwner: setupGithubOwnerInputEl.value,
+      githubRepo: setupGithubRepoInputEl.value,
+      githubBranch: setupGithubBranchInputEl.value,
+      githubAudioDir: setupGithubAudioDirInputEl.value,
+      githubPagesBaseUrl: setupGithubPagesBaseUrlInputEl.value
     });
     setView("login");
     showNotice("首次設定完成，請使用密碼登入");
