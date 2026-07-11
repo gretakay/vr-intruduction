@@ -267,8 +267,8 @@ function exhibitRowTemplate(exhibit) {
     </label>
 
     <label>
-      語音檔案（audio）
-      <input class="audio-file" type="file" accept=".mp3,audio/mpeg" />
+      語音網址（audio URL）
+      <input class="audio-url-input" type="url" value="${exhibit.audioUrl || ""}" placeholder="https://.../audio.mp3" />
     </label>
 
     <div class="preview-links">
@@ -277,10 +277,10 @@ function exhibitRowTemplate(exhibit) {
     </div>
 
     <div class="row-actions">
-      <button class="save-btn action-btn" type="button">儲存名稱</button>
-      <button class="upload-btn action-btn" type="button">上傳圖片/語音</button>
+      <button class="save-btn action-btn" type="button">儲存名稱與語音網址</button>
+      <button class="upload-btn action-btn" type="button">上傳圖片</button>
       <button class="delete-image-btn ghost-btn" type="button">刪除圖片</button>
-      <button class="delete-audio-btn ghost-btn" type="button">刪除音檔</button>
+      <button class="delete-audio-btn ghost-btn" type="button">清空語音網址</button>
       <button class="delete-btn ghost-btn" type="button">刪除此展區</button>
     </div>
   `;
@@ -294,29 +294,30 @@ function exhibitRowTemplate(exhibit) {
   saveBtn.addEventListener("click", async () => {
     try {
       const nameValue = wrap.querySelector(".name-input").value;
+      const audioUrlValue = wrap.querySelector(".audio-url-input").value;
       await postAction({
         action: "updateExhibit",
         token: getToken(),
         id: exhibit.id,
-        name: nameValue
+        name: nameValue,
+        audioUrl: audioUrlValue
       });
       await fetchStore();
-      showNotice("名稱已更新（不會變更圖片/語音）");
+      showNotice("名稱與語音網址已更新");
     } catch (error) {
       showNotice(error.message || "儲存失敗", "error");
     }
   });
 
   uploadBtn.addEventListener("click", async () => {
-    const uploadIdleText = "上傳圖片/語音";
+    const uploadIdleText = "上傳圖片";
     setButtonBusy(uploadBtn, true, uploadIdleText, "上傳中...");
 
     try {
       const imageFile = wrap.querySelector(".image-file").files?.[0];
-      const audioFile = wrap.querySelector(".audio-file").files?.[0];
 
-      if (!imageFile && !audioFile) {
-        showNotice("請選擇至少一個檔案", "error");
+      if (!imageFile) {
+        showNotice("請先選擇圖片檔案", "error");
         return;
       }
 
@@ -343,28 +344,11 @@ function exhibitRowTemplate(exhibit) {
         }
       }
 
-      if (audioFile) {
-        if (!isMp3File(audioFile)) {
-          showNotice("目前僅支援 MP3 音檔", "error");
-          return;
-        }
-
-        if (audioFile.size > AUDIO_WARN_SIZE_MB * 1024 * 1024) {
-          showNotice(`音檔 ${bytesToMb(audioFile.size)}MB 較大，上傳可能需較久`, "error");
-        }
-
-        payload.audio = {
-          name: audioFile.name,
-          mime: "audio/mpeg",
-          base64: await fileToBase64(audioFile)
-        };
-      }
-
       const result = await postAction(payload);
       await fetchStore();
       const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
       const sourceLabel = getAudioSourceLabel(result?.audioUrl);
-      showNotice(`檔案已上傳完成（${seconds} 秒），目前語音來源：${sourceLabel}`);
+      showNotice(`圖片已上傳完成（${seconds} 秒），目前語音來源：${sourceLabel}`);
     } catch (error) {
       showNotice(error.message || "上傳失敗", "error");
     } finally {
@@ -404,15 +388,15 @@ function exhibitRowTemplate(exhibit) {
   deleteAudioBtn.addEventListener("click", async () => {
     try {
       await postAction({
-        action: "removeAsset",
+        action: "updateExhibit",
         token: getToken(),
         id: exhibit.id,
-        assetType: "audio"
+        audioUrl: ""
       });
       await fetchStore();
-      showNotice("音檔已刪除，GitHub 檔案已同步刪除");
+      showNotice("語音網址已清空");
     } catch (error) {
-      showNotice(error.message || "刪除音檔失敗", "error");
+      showNotice(error.message || "清空語音網址失敗", "error");
     }
   });
 
