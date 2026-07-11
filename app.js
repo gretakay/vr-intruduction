@@ -18,6 +18,14 @@ const playBtnEl = document.getElementById("playBtn");
 const audioPlayerEl = document.getElementById("audioPlayer");
 const galleryGridEl = document.getElementById("galleryGrid");
 
+function formatLoadError(error) {
+  const raw = String(error?.message || error || "");
+  if (/Failed to fetch|NetworkError|Load failed/i.test(raw)) {
+    return "無法連線 Apps Script API（可能是 CORS、部署權限或網址錯誤）。請檢查 config.js 的 API_BASE_URL 與 Web App 存取權限。";
+  }
+  return raw || "載入失敗";
+}
+
 function renderSiteHeader() {
   siteTitleEl.textContent = state.config.title || "歡迎來到某某某展場";
   document.title = state.config.title || "虛擬導覽";
@@ -128,5 +136,5 @@ playBtnEl.addEventListener("click", () => {
 });
 
 loadPublicData().catch((error) => {
-  galleryGridEl.innerHTML = `<p class="empty-tip">載入失敗：${error.message}</p>`;
+  galleryGridEl.innerHTML = `<p class="empty-tip">載入失敗：${formatLoadError(error)}</p>`;
 });

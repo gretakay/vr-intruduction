@@ -30,6 +30,14 @@ const state = {
   exhibits: []
 };
 
+function formatRequestError(error) {
+  const raw = String(error?.message || error || "");
+  if (/Failed to fetch|NetworkError|Load failed/i.test(raw)) {
+    return "無法連線 Apps Script API（可能是 CORS、部署權限或網址錯誤）。請檢查 config.js 的 API_BASE_URL 與 Web App 設定。";
+  }
+  return raw || "操作失敗";
+}
+
 function showNotice(message, type = "success") {
   noticeEl.textContent = message;
   noticeEl.classList.remove("hidden", "success", "error");
@@ -402,5 +410,5 @@ async function initialize() {
 }
 
 initialize().catch((error) => {
-  showNotice(error.message || "系統錯誤", "error");
+  showNotice(formatRequestError(error), "error");
 });
