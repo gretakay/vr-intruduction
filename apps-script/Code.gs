@@ -1,8 +1,6 @@
 const CONFIG_SHEET = "Config";
 const EXHIBITS_SHEET = "Exhibits";
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
-const DEFAULT_GITHUB_BRANCH = "main";
-const DEFAULT_GITHUB_AUDIO_DIR = "assets/audio";
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || "publicData";
@@ -95,7 +93,6 @@ function getSystemSettings_(payload) {
   const sheetId = props.getProperty("SHEET_ID") || "";
   const driveFolderId = props.getProperty("DRIVE_FOLDER_ID") || "";
   const hasPassword = Boolean(getConfiguredAdminPassword_());
-  const githubConfig = getGithubConfig_();
   const needsSetup = !sheetId || !hasPassword;
 
   if (!needsSetup && payload.token) {
@@ -111,13 +108,7 @@ function getSystemSettings_(payload) {
     needsSetup: needsSetup,
     hasPassword: hasPassword,
     sheetId: sheetId,
-    driveFolderId: driveFolderId,
-    githubOwner: githubConfig.owner,
-    githubRepo: githubConfig.repo,
-    githubBranch: githubConfig.branch,
-    githubAudioDir: githubConfig.audioDir,
-    githubPagesBaseUrl: githubConfig.pagesBaseUrl,
-    hasGithubToken: Boolean(githubConfig.token)
+    driveFolderId: driveFolderId
   });
 }
 
@@ -132,12 +123,6 @@ function saveSystemSettings_(payload) {
   const nextSheetId = String(payload.sheetId || "").trim();
   const nextDriveFolderId = String(payload.driveFolderId || "").trim();
   const nextAdminPassword = String(payload.adminPassword || "").trim();
-  const nextGithubOwner = String(payload.githubOwner || "").trim();
-  const nextGithubRepo = String(payload.githubRepo || "").trim();
-  const nextGithubBranch = String(payload.githubBranch || "").trim() || DEFAULT_GITHUB_BRANCH;
-  const nextGithubAudioDir = String(payload.githubAudioDir || "").trim() || DEFAULT_GITHUB_AUDIO_DIR;
-  const nextGithubPagesBaseUrl = String(payload.githubPagesBaseUrl || "").trim();
-  const nextGithubToken = String(payload.githubToken || "").trim();
 
   if (!nextSheetId) {
     throw new Error("SHEET_ID 不可空白");
@@ -157,29 +142,6 @@ function saveSystemSettings_(payload) {
 
   if (nextAdminPassword) {
     props.setProperty("ADMIN_PASSWORD", nextAdminPassword);
-  }
-
-  if (nextGithubOwner) {
-    props.setProperty("GITHUB_OWNER", nextGithubOwner);
-  }
-  if (nextGithubRepo) {
-    props.setProperty("GITHUB_REPO", nextGithubRepo);
-  }
-  if (nextGithubBranch) {
-    props.setProperty("GITHUB_BRANCH", nextGithubBranch);
-  }
-  if (nextGithubAudioDir) {
-    props.setProperty("GITHUB_AUDIO_DIR", nextGithubAudioDir);
-  }
-
-  if (nextGithubPagesBaseUrl) {
-    props.setProperty("GITHUB_PAGES_BASE_URL", nextGithubPagesBaseUrl);
-  } else {
-    props.deleteProperty("GITHUB_PAGES_BASE_URL");
-  }
-
-  if (nextGithubToken) {
-    props.setProperty("GITHUB_TOKEN", nextGithubToken);
   }
 
   ensureSheets_();
@@ -313,8 +275,20 @@ function updateExhibit_(payload) {
   }
 
   const name = payload.name != null ? String(payload.name).trim() : null;
+  const audioUrl = payload.audioUrl != null ? String(payload.audioUrl).trim() : null;
+  let changed = false;
+
   if (name !== null) {
     refs.exhibitsSheet.getRange(target.row, 2).setValue(name);
+    changed = true;
+  }
+
+  if (audioUrl !== null) {
+    refs.exhibitsSheet.getRange(target.row, 4).setValue(audioUrl);
+    changed = true;
+  }
+
+  if (changed) {
     refs.exhibitsSheet.getRange(target.row, 5).setValue(new Date().toISOString());
   }
 
@@ -329,7 +303,6 @@ function deleteExhibit_(payload) {
   }
 
   deleteDriveFileByUrl_(target.imageUrl);
-  deleteGithubAudioIfPossible_(target.audioUrl);
 
   refs.exhibitsSheet.deleteRow(target.row);
   return jsonOutput_({ ok: true });
@@ -344,7 +317,6 @@ function uploadAssets_(payload) {
 
   const folder = getUploadFolder_();
   let nextImageUrl = target.imageUrl;
-  let nextAudioUrl = target.audioUrl;
 
   if (payload.image && payload.image.base64) {
     deleteDriveFileByUrl_(target.imageUrl);
@@ -353,31 +325,11 @@ function uploadAssets_(payload) {
     nextImageUrl = imageUrl;
   }
 
-  if (payload.audio && payload.audio.base64) {
-    validateAudioPayload_(payload.audio);
-    deleteGithubAudioIfPossible_(target.audioUrl);
-    const audioUrl = uploadAudioToGithub_(payload.audio, payload.id);
-    refs.exhibitsSheet.getRange(target.row, 4).setValue(audioUrl);
-    nextAudioUrl = audioUrl;
-  }
-
   refs.exhibitsSheet.getRange(target.row, 5).setValue(new Date().toISOString());
   return jsonOutput_({
     ok: true,
-    imageUrl: nextImageUrl,
-    audioUrl: nextAudioUrl
+    imageUrl: nextImageUrl
   });
-}
-
-function validateAudioPayload_(audioPayload) {
-  const name = String(audioPayload.name || "").toLowerCase();
-  const mime = String(audioPayload.mime || "").toLowerCase();
-  const isMp3ByName = /\.mp3$/.test(name);
-  const isMp3ByMime = mime === "audio/mpeg" || mime === "audio/mp3";
-
-  if (!isMp3ByName && !isMp3ByMime) {
-    throw new Error("目前僅支援 MP3 音檔上傳");
-  }
 }
 
 function removeAsset_(payload) {
@@ -396,7 +348,6 @@ function removeAsset_(payload) {
     deleteDriveFileByUrl_(target.imageUrl);
     refs.exhibitsSheet.getRange(target.row, 3).setValue("");
   } else {
-    deleteGithubAudioIfPossible_(target.audioUrl);
     refs.exhibitsSheet.getRange(target.row, 4).setValue("");
   }
 
@@ -427,163 +378,6 @@ function drivePublicUrl_(fileId, isImage) {
   }
   // Prefer media export for direct playback in <audio>.
   return "https://drive.google.com/uc?export=media&id=" + fileId;
-}
-
-function getGithubConfig_() {
-  const props = PropertiesService.getScriptProperties();
-  return {
-    owner: String(props.getProperty("GITHUB_OWNER") || "").trim(),
-    repo: String(props.getProperty("GITHUB_REPO") || "").trim(),
-    branch: String(props.getProperty("GITHUB_BRANCH") || "").trim() || DEFAULT_GITHUB_BRANCH,
-    audioDir: String(props.getProperty("GITHUB_AUDIO_DIR") || "").trim() || DEFAULT_GITHUB_AUDIO_DIR,
-    pagesBaseUrl: String(props.getProperty("GITHUB_PAGES_BASE_URL") || "").trim(),
-    token: String(props.getProperty("GITHUB_TOKEN") || "").trim()
-  };
-}
-
-function uploadAudioToGithub_(audioPayload, exhibitId) {
-  const cfg = getGithubConfig_();
-  if (!cfg.owner || !cfg.repo || !cfg.token) {
-    throw new Error("音檔改為 GitHub 儲存，請先在系統設定填入 GITHUB_OWNER、GITHUB_REPO、GITHUB_TOKEN");
-  }
-
-  const safeName = String(audioPayload.name || "audio.mp3")
-    .replace(/[^a-zA-Z0-9._-]/g, "_")
-    .replace(/\.[^.]+$/, ".mp3");
-  const filePath = `${trimSlashes_(cfg.audioDir)}/${String(exhibitId || "exhibit")}/${Date.now()}-${safeName}`;
-  const encodedPath = encodePathForGithub_(filePath);
-  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodedPath}`;
-
-  const requestBody = {
-    message: `chore: upload audio ${safeName}`,
-    content: audioPayload.base64,
-    branch: cfg.branch
-  };
-
-  const response = UrlFetchApp.fetch(apiUrl, {
-    method: "put",
-    contentType: "application/json",
-    headers: {
-      Authorization: `Bearer ${cfg.token}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28"
-    },
-    payload: JSON.stringify(requestBody),
-    muteHttpExceptions: true
-  });
-
-  const status = response.getResponseCode();
-  if (status !== 200 && status !== 201) {
-    const rawBody = String(response.getContentText() || "");
-    let detail = "";
-    try {
-      const parsed = JSON.parse(rawBody || "{}");
-      detail = String(parsed.message || parsed.error || "").trim();
-    } catch (error) {
-      detail = "";
-    }
-
-    const reason = detail ? `：${detail}` : "";
-    throw new Error(`GitHub 上傳失敗（HTTP ${status}）${reason}`);
-  }
-
-  return buildGithubAudioUrl_(cfg, filePath);
-}
-
-function buildGithubAudioUrl_(cfg, filePath) {
-  if (cfg.pagesBaseUrl) {
-    return `${trimTrailingSlash_(cfg.pagesBaseUrl)}/${trimSlashes_(filePath)}`;
-  }
-  return `https://${cfg.owner}.github.io/${cfg.repo}/${trimSlashes_(filePath)}`;
-}
-
-function deleteGithubAudioIfPossible_(audioUrl) {
-  const cfg = getGithubConfig_();
-  if (!cfg.owner || !cfg.repo || !cfg.token) {
-    return;
-  }
-
-  const filePath = extractGithubFilePath_(audioUrl, cfg);
-  if (!filePath) {
-    return;
-  }
-
-  const encodedPath = encodePathForGithub_(filePath);
-  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodedPath}?ref=${encodeURIComponent(cfg.branch)}`;
-  const getRes = UrlFetchApp.fetch(apiUrl, {
-    method: "get",
-    headers: {
-      Authorization: `Bearer ${cfg.token}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28"
-    },
-    muteHttpExceptions: true
-  });
-
-  if (getRes.getResponseCode() !== 200) {
-    return;
-  }
-
-  const getData = JSON.parse(getRes.getContentText() || "{}");
-  const sha = String(getData.sha || "").trim();
-  if (!sha) {
-    return;
-  }
-
-  UrlFetchApp.fetch(`https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${encodedPath}`, {
-    method: "delete",
-    contentType: "application/json",
-    headers: {
-      Authorization: `Bearer ${cfg.token}`,
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28"
-    },
-    payload: JSON.stringify({
-      message: `chore: delete audio ${filePath}`,
-      sha: sha,
-      branch: cfg.branch
-    }),
-    muteHttpExceptions: true
-  });
-}
-
-function extractGithubFilePath_(url, cfg) {
-  const raw = String(url || "").trim();
-  if (!raw) {
-    return "";
-  }
-
-  const pagesBase = trimTrailingSlash_(cfg.pagesBaseUrl);
-  if (pagesBase && raw.indexOf(pagesBase + "/") === 0) {
-    return raw.slice((pagesBase + "/").length);
-  }
-
-  const defaultBase = `https://${cfg.owner}.github.io/${cfg.repo}/`;
-  if (raw.indexOf(defaultBase) === 0) {
-    return raw.slice(defaultBase.length);
-  }
-
-  return "";
-}
-
-function trimSlashes_(value) {
-  return String(value || "").replace(/^\/+|\/+$/g, "");
-}
-
-function trimTrailingSlash_(value) {
-  return String(value || "").replace(/\/+$/g, "");
-}
-
-function encodePathForGithub_(path) {
-  return String(path || "")
-    .split("/")
-    .filter(function(part) {
-      return part !== "";
-    })
-    .map(function(part) {
-      return encodeURIComponent(part);
-    })
-    .join("/");
 }
 
 function normalizeImageUrl_(url) {
