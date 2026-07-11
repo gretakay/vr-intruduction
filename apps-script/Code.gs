@@ -343,11 +343,14 @@ function uploadAssets_(payload) {
   }
 
   const folder = getUploadFolder_();
+  let nextImageUrl = target.imageUrl;
+  let nextAudioUrl = target.audioUrl;
 
   if (payload.image && payload.image.base64) {
     deleteDriveFileByUrl_(target.imageUrl);
     const imageUrl = createDriveFile_(folder, payload.image);
     refs.exhibitsSheet.getRange(target.row, 3).setValue(imageUrl);
+    nextImageUrl = imageUrl;
   }
 
   if (payload.audio && payload.audio.base64) {
@@ -355,10 +358,15 @@ function uploadAssets_(payload) {
     deleteGithubAudioIfPossible_(target.audioUrl);
     const audioUrl = uploadAudioToGithub_(payload.audio, payload.id);
     refs.exhibitsSheet.getRange(target.row, 4).setValue(audioUrl);
+    nextAudioUrl = audioUrl;
   }
 
   refs.exhibitsSheet.getRange(target.row, 5).setValue(new Date().toISOString());
-  return jsonOutput_({ ok: true });
+  return jsonOutput_({
+    ok: true,
+    imageUrl: nextImageUrl,
+    audioUrl: nextAudioUrl
+  });
 }
 
 function validateAudioPayload_(audioPayload) {
@@ -466,7 +474,17 @@ function uploadAudioToGithub_(audioPayload, exhibitId) {
 
   const status = response.getResponseCode();
   if (status !== 200 && status !== 201) {
-    throw new Error("GitHub 上傳失敗，請確認 Token 權限與 Repo 設定");
+    const rawBody = String(response.getContentText() || "");
+    let detail = "";
+    try {
+      const parsed = JSON.parse(rawBody || "{}");
+      detail = String(parsed.message || parsed.error || "").trim();
+    } catch (error) {
+      detail = "";
+    }
+
+    const reason = detail ? `：${detail}` : "";
+    throw new Error(`GitHub 上傳失敗（HTTP ${status}）${reason}`);
   }
 
   return buildGithubAudioUrl_(cfg, filePath);

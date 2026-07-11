@@ -99,6 +99,20 @@ function isMp3File(file) {
   return name.endsWith(".mp3") || mime === "audio/mpeg" || mime === "audio/mp3";
 }
 
+function getAudioSourceLabel(url) {
+  const raw = String(url || "").toLowerCase();
+  if (!raw) {
+    return "無";
+  }
+  if (raw.includes("github.io") || raw.includes("raw.githubusercontent.com")) {
+    return "GitHub";
+  }
+  if (raw.includes("drive.google.com") || raw.includes("googleusercontent.com")) {
+    return "Google Drive";
+  }
+  return "其他";
+}
+
 function fillSystemInputs(system) {
   const sheetId = system?.sheetId || "";
   const driveFolderId = system?.driveFolderId || "";
@@ -287,7 +301,7 @@ function exhibitRowTemplate(exhibit) {
         name: nameValue
       });
       await fetchStore();
-      showNotice("名稱已更新");
+      showNotice("名稱已更新（不會變更圖片/語音）");
     } catch (error) {
       showNotice(error.message || "儲存失敗", "error");
     }
@@ -346,10 +360,11 @@ function exhibitRowTemplate(exhibit) {
         };
       }
 
-      await postAction(payload);
+      const result = await postAction(payload);
       await fetchStore();
       const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
-      showNotice(`檔案已上傳（圖片到 Drive、音檔到 GitHub）並寫入 Google Sheet（${seconds} 秒）`);
+      const sourceLabel = getAudioSourceLabel(result?.audioUrl);
+      showNotice(`檔案已上傳完成（${seconds} 秒），目前語音來源：${sourceLabel}`);
     } catch (error) {
       showNotice(error.message || "上傳失敗", "error");
     } finally {

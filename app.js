@@ -69,19 +69,22 @@ function normalizeDriveImageUrl(url) {
 }
 
 function buildAudioCandidates(url) {
+  const rawUrl = String(url || "").trim();
   const fileId = extractDriveFileId(url);
   if (!fileId) {
-    return [url].filter(Boolean);
+    return [rawUrl].filter(Boolean);
   }
 
   const candidates = [
-    `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`,
-    `https://docs.google.com/uc?export=open&id=${fileId}`,
+    rawUrl,
+    `https://drive.usercontent.google.com/download?id=${fileId}&export=media`,
     `https://drive.google.com/uc?export=media&id=${fileId}`,
+    `https://docs.google.com/uc?export=open&id=${fileId}`,
+    `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`,
     `https://drive.google.com/uc?export=download&id=${fileId}`
   ];
 
-  return [...new Set(candidates)];
+  return [...new Set(candidates.filter(Boolean))];
 }
 
 function switchToNextAudioSource() {
