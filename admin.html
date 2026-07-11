@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>後台管理</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-bg"></div>
+    <main class="admin-shell">
+      <section id="setupCard" class="panel login-panel hidden">
+        <h1>首次系統設定</h1>
+        <p>第一次使用可直接在這裡設定 SHEET_ID、後台密碼與上傳資料夾。</p>
+        <form id="setupForm" class="stack-form">
+          <input id="setupSheetIdInput" type="text" placeholder="SHEET_ID" required />
+          <input id="setupDriveFolderIdInput" type="text" placeholder="DRIVE_FOLDER_ID（可留空）" />
+          <input id="setupPasswordInput" type="password" placeholder="設定後台密碼" required />
+          <button class="action-btn" type="submit">儲存首次設定</button>
+        </form>
+      </section>
+
+      <section id="loginCard" class="panel login-panel">
+        <h1>後台登入</h1>
+        <p>請輸入管理密碼才能開啟上傳後台。</p>
+        <form id="loginForm" class="stack-form">
+          <input id="passwordInput" type="password" placeholder="請輸入密碼" required />
+          <button class="action-btn" type="submit">登入</button>
+        </form>
+      </section>
+
+      <section id="adminPanel" class="panel hidden">
+        <div class="admin-header">
+          <h1>展場設定</h1>
+          <button id="logoutBtn" class="ghost-btn">登出</button>
+        </div>
+
+        <div class="config-grid">
+          <label>
+            展場標題
+            <input id="titleInput" type="text" placeholder="歡迎來到某某某展場" />
+          </label>
+          <label>
+            Logo 網址
+            <input id="logoInput" type="url" placeholder="https://..." />
+          </label>
+          <button id="saveConfigBtn" class="action-btn">儲存標題與 Logo</button>
+        </div>
+
+        <div class="list-actions">
+          <h2>系統設定</h2>
+        </div>
+
+        <div class="config-grid">
+          <label>
+            SHEET_ID
+            <input id="systemSheetIdInput" type="text" placeholder="Spreadsheet ID" />
+          </label>
+          <label>
+            DRIVE_FOLDER_ID
+            <input id="systemDriveFolderIdInput" type="text" placeholder="可留空" />
+          </label>
+          <label>
+            新後台密碼（可留空）
+            <input id="systemPasswordInput" type="password" placeholder="不修改可留空" />
+          </label>
+          <button id="saveSystemBtn" class="action-btn">儲存系統設定</button>
+        </div>
+
+        <div class="list-actions">
+          <h2>展區列表</h2>
+          <button id="addExhibitBtn" class="action-btn">新增展區</button>
+        </div>
+
+        <div id="exhibitList" class="admin-list"></div>
+      </section>
+
+      <div id="notice" class="notice hidden"></div>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./admin.js" defer></script>
+  </body>
+</html>

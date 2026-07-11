@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>虛擬導覽</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-bg"></div>
+    <main class="app-shell">
+      <header class="hero">
+        <div class="hero-left">
+          <img id="siteLogo" class="site-logo hidden" alt="展場 Logo" />
+          <h1 id="siteTitle">歡迎來到某某某展場</h1>
+          <p>點擊下方任一展區圖片，畫面與語音導覽會立即切換。</p>
+        </div>
+      </header>
+
+      <section class="stage-card">
+        <div class="stage-image-wrap">
+          <img id="stageImage" class="stage-image" alt="目前展區" />
+          <div id="stagePlaceholder" class="stage-placeholder">請先到後台上傳展區圖片</div>
+        </div>
+        <div class="stage-meta">
+          <h2 id="stageTitle">尚未選擇展區</h2>
+          <button id="playBtn" class="action-btn" disabled>播放語音導覽</button>
+          <audio id="audioPlayer" controls class="audio-player"></audio>
+        </div>
+      </section>
+
+      <section>
+        <div id="galleryGrid" class="gallery-grid"></div>
+      </section>
+    </main>
+
+    <script src="./config.js"></script>
+    <script src="./app.js" defer></script>
+  </body>
+</html>
