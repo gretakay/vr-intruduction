@@ -80,16 +80,23 @@ function setButtonBusy(button, busy, idleText, busyText) {
   button.textContent = busy ? busyText : idleText;
 }
 
+function setInputValue(inputEl, value) {
+  if (!inputEl) {
+    return;
+  }
+  inputEl.value = value;
+}
+
 function fillSystemInputs(system) {
   const sheetId = system?.sheetId || "";
   const driveFolderId = system?.driveFolderId || "";
 
-  setupSheetIdInputEl.value = sheetId;
-  setupDriveFolderIdInputEl.value = driveFolderId;
+  setInputValue(setupSheetIdInputEl, sheetId);
+  setInputValue(setupDriveFolderIdInputEl, driveFolderId);
 
-  systemSheetIdInputEl.value = sheetId;
-  systemDriveFolderIdInputEl.value = driveFolderId;
-  systemPasswordInputEl.value = "";
+  setInputValue(systemSheetIdInputEl, sheetId);
+  setInputValue(systemDriveFolderIdInputEl, driveFolderId);
+  setInputValue(systemPasswordInputEl, "");
 }
 
 async function postAction(payload) {
@@ -122,8 +129,8 @@ async function fetchStore() {
   state.config = result.data.config || state.config;
   state.exhibits = result.data.exhibits || [];
 
-  titleInputEl.value = state.config.title || "";
-  logoInputEl.value = state.config.logoUrl || "";
+  setInputValue(titleInputEl, state.config.title || "");
+  setInputValue(logoInputEl, state.config.logoUrl || "");
   renderExhibits();
 }
 
@@ -400,7 +407,7 @@ saveSystemBtnEl.addEventListener("click", async () => {
       driveFolderId: systemDriveFolderIdInputEl.value,
       adminPassword: systemPasswordInputEl.value
     });
-    systemPasswordInputEl.value = "";
+    setInputValue(systemPasswordInputEl, "");
     showNotice("系統設定已更新");
   } catch (error) {
     showNotice(error.message || "系統設定儲存失敗", "error");
@@ -437,7 +444,7 @@ setupFormEl.addEventListener("submit", async (event) => {
       adminPassword: setupPasswordInputEl.value
     });
 
-    setupPasswordInputEl.value = "";
+    setInputValue(setupPasswordInputEl, "");
     fillSystemInputs({
       sheetId: setupSheetIdInputEl.value,
       driveFolderId: setupDriveFolderIdInputEl.value
