@@ -81,6 +81,12 @@ function setButtonBusy(button, busy, idleText, busyText) {
   button.textContent = busy ? busyText : idleText;
 }
 
+function isMp3File(file) {
+  const name = String(file?.name || "").toLowerCase();
+  const mime = String(file?.type || "").toLowerCase();
+  return name.endsWith(".mp3") || mime === "audio/mpeg" || mime === "audio/mp3";
+}
+
 function fillSystemInputs(system) {
   const sheetId = system?.sheetId || "";
   const driveFolderId = system?.driveFolderId || "";
@@ -218,7 +224,7 @@ function exhibitRowTemplate(exhibit) {
 
     <label>
       語音檔案（audio）
-      <input class="audio-file" type="file" accept="audio/*" />
+      <input class="audio-file" type="file" accept=".mp3,audio/mpeg" />
     </label>
 
     <div class="preview-links">
@@ -294,13 +300,18 @@ function exhibitRowTemplate(exhibit) {
       }
 
       if (audioFile) {
+        if (!isMp3File(audioFile)) {
+          showNotice("目前僅支援 MP3 音檔", "error");
+          return;
+        }
+
         if (audioFile.size > AUDIO_WARN_SIZE_MB * 1024 * 1024) {
           showNotice(`音檔 ${bytesToMb(audioFile.size)}MB 較大，上傳可能需較久`, "error");
         }
 
         payload.audio = {
           name: audioFile.name,
-          mime: audioFile.type || "audio/mpeg",
+          mime: "audio/mpeg",
           base64: await fileToBase64(audioFile)
         };
       }

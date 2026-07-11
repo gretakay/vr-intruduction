@@ -313,6 +313,7 @@ function uploadAssets_(payload) {
   }
 
   if (payload.audio && payload.audio.base64) {
+    validateAudioPayload_(payload.audio);
     deleteDriveFileByUrl_(target.audioUrl);
     const audioUrl = createDriveFile_(folder, payload.audio);
     refs.exhibitsSheet.getRange(target.row, 4).setValue(audioUrl);
@@ -320,6 +321,17 @@ function uploadAssets_(payload) {
 
   refs.exhibitsSheet.getRange(target.row, 5).setValue(new Date().toISOString());
   return jsonOutput_({ ok: true });
+}
+
+function validateAudioPayload_(audioPayload) {
+  const name = String(audioPayload.name || "").toLowerCase();
+  const mime = String(audioPayload.mime || "").toLowerCase();
+  const isMp3ByName = /\.mp3$/.test(name);
+  const isMp3ByMime = mime === "audio/mpeg" || mime === "audio/mp3";
+
+  if (!isMp3ByName && !isMp3ByMime) {
+    throw new Error("目前僅支援 MP3 音檔上傳");
+  }
 }
 
 function removeAsset_(payload) {
