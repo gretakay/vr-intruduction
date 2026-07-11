@@ -379,8 +379,8 @@ function drivePublicUrl_(fileId, isImage) {
     // Use googleusercontent direct image URL for better frontend compatibility.
     return "https://lh3.googleusercontent.com/d/" + fileId + "=w2000";
   }
-  // Prefer download export; some Drive files play more reliably with this form.
-  return "https://drive.google.com/uc?export=download&id=" + fileId;
+  // Prefer media export for direct playback in <audio>.
+  return "https://drive.google.com/uc?export=media&id=" + fileId;
 }
 
 function normalizeImageUrl_(url) {
@@ -396,7 +396,7 @@ function normalizeAudioUrl_(url) {
   if (!fileId) {
     return url;
   }
-  return "https://drive.google.com/uc?export=download&id=" + fileId;
+  return "https://drive.google.com/uc?export=media&id=" + fileId;
 }
 
 function findExhibitRow_(sheet, id) {
