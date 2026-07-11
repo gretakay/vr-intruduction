@@ -389,9 +389,24 @@ function normalizeImageUrl_(url) {
 }
 
 function normalizeAudioUrl_(url) {
+  const raw = String(url || "").trim();
+  if (!raw) {
+    return "";
+  }
+
+  // Convert GitHub blob URL to direct raw file URL for <audio> playback.
+  const githubBlobMatch = /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/i.exec(raw);
+  if (githubBlobMatch) {
+    const owner = githubBlobMatch[1];
+    const repo = githubBlobMatch[2];
+    const branch = githubBlobMatch[3];
+    const path = githubBlobMatch[4];
+    return "https://raw.githubusercontent.com/" + owner + "/" + repo + "/" + branch + "/" + path;
+  }
+
   const fileId = extractDriveFileId_(url);
   if (!fileId) {
-    return url;
+    return raw;
   }
   return "https://drive.google.com/uc?export=media&id=" + fileId;
 }
