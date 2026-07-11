@@ -75,8 +75,8 @@ function buildAudioCandidates(url) {
   }
 
   return [
-    `https://drive.google.com/uc?export=media&id=${fileId}`,
-    `https://drive.google.com/uc?export=download&id=${fileId}`
+    `https://drive.google.com/uc?export=download&id=${fileId}`,
+    `https://drive.google.com/uc?export=media&id=${fileId}`
   ];
 }
 
