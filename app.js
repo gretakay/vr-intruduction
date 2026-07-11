@@ -20,6 +20,18 @@ const galleryGridEl = document.getElementById("galleryGrid");
 let currentAudioCandidates = [];
 let currentAudioIndex = 0;
 
+function ensureCurrentSelection() {
+  if (!state.exhibits.length) {
+    state.currentId = null;
+    return;
+  }
+
+  const exists = state.exhibits.some((item) => item.id === state.currentId);
+  if (!exists) {
+    state.currentId = state.exhibits[0].id;
+  }
+}
+
 function formatLoadError(error) {
   const raw = String(error?.message || error || "");
   if (/Failed to fetch|NetworkError|Load failed/i.test(raw)) {
@@ -36,6 +48,7 @@ function renderSiteHeader() {
     siteLogoEl.src = normalizeDriveImageUrl(state.config.logoUrl);
     siteLogoEl.classList.remove("hidden");
   } else {
+    siteLogoEl.removeAttribute("src");
     siteLogoEl.classList.add("hidden");
   }
 }
@@ -103,11 +116,13 @@ function getCurrentExhibit() {
 }
 
 function renderStage() {
+  ensureCurrentSelection();
   const current = getCurrentExhibit();
   if (!current) {
     stagePlaceholderEl.classList.remove("hidden");
     stageImageEl.classList.add("hidden");
-    stageTitleEl.textContent = "尚未選擇展區";
+    stageImageEl.removeAttribute("src");
+    stageTitleEl.textContent = state.exhibits.length ? "載入中..." : "目前沒有展區";
     playBtnEl.disabled = true;
     audioPlayerEl.removeAttribute("src");
     audioPlayerEl.load();
@@ -121,6 +136,7 @@ function renderStage() {
     stageImageEl.classList.remove("hidden");
     stagePlaceholderEl.classList.add("hidden");
   } else {
+    stageImageEl.removeAttribute("src");
     stageImageEl.classList.add("hidden");
     stagePlaceholderEl.classList.remove("hidden");
   }
@@ -189,12 +205,23 @@ async function loadPublicData() {
 
   state.config = result.data.config || state.config;
   state.exhibits = result.data.exhibits || [];
-  state.currentId = state.exhibits[0]?.id || null;
+  ensureCurrentSelection();
 
   renderSiteHeader();
   renderGallery();
   renderStage();
 }
+
+siteLogoEl.addEventListener("error", () => {
+  siteLogoEl.removeAttribute("src");
+  siteLogoEl.classList.add("hidden");
+});
+
+stageImageEl.addEventListener("error", () => {
+  stageImageEl.removeAttribute("src");
+  stageImageEl.classList.add("hidden");
+  stagePlaceholderEl.classList.remove("hidden");
+});
 
 playBtnEl.addEventListener("click", () => {
   audioPlayerEl.play().catch(() => {
