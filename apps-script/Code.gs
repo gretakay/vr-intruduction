@@ -1,6 +1,7 @@
 const CONFIG_SHEET = "Config";
 const EXHIBITS_SHEET = "Exhibits";
 const TOKEN_TTL_SECONDS = 60 * 60 * 8;
+const DEFAULT_ADMIN_PASSWORD = "puping2026";
 
 function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || "publicData";
@@ -74,10 +75,7 @@ function jsonOutput_(data) {
 }
 
 function login_(payload) {
-  const savedPassword = PropertiesService.getScriptProperties().getProperty("ADMIN_PASSWORD") || "";
-  if (!savedPassword) {
-    throw new Error("尚未完成初始設定，請先在後台完成系統設定");
-  }
+  const savedPassword = getConfiguredAdminPassword_();
 
   if (!payload.password || payload.password !== savedPassword) {
     throw new Error("密碼錯誤");
@@ -92,8 +90,8 @@ function getSystemSettings_(payload) {
   const props = PropertiesService.getScriptProperties();
   const sheetId = props.getProperty("SHEET_ID") || "";
   const driveFolderId = props.getProperty("DRIVE_FOLDER_ID") || "";
-  const hasPassword = Boolean(props.getProperty("ADMIN_PASSWORD") || "");
-  const needsSetup = !sheetId || !hasPassword;
+  const hasPassword = Boolean(getConfiguredAdminPassword_());
+  const needsSetup = !sheetId;
 
   if (!needsSetup && payload.token) {
     requireAuth_(payload.token);
@@ -114,8 +112,7 @@ function getSystemSettings_(payload) {
 
 function saveSystemSettings_(payload) {
   const props = PropertiesService.getScriptProperties();
-  const currentPassword = props.getProperty("ADMIN_PASSWORD") || "";
-  const needsSetup = !currentPassword || !props.getProperty("SHEET_ID");
+  const needsSetup = !props.getProperty("SHEET_ID");
 
   if (!needsSetup) {
     requireAuth_(payload.token);
@@ -127,10 +124,6 @@ function saveSystemSettings_(payload) {
 
   if (!nextSheetId) {
     throw new Error("SHEET_ID 不可空白");
-  }
-
-  if (needsSetup && !nextAdminPassword) {
-    throw new Error("首次設定時必須設定後台密碼");
   }
 
   props.setProperty("SHEET_ID", nextSheetId);
@@ -414,4 +407,8 @@ function extractDriveFileId_(url) {
   }
 
   return "";
+}
+
+function getConfiguredAdminPassword_() {
+  return PropertiesService.getScriptProperties().getProperty("ADMIN_PASSWORD") || DEFAULT_ADMIN_PASSWORD;
 }

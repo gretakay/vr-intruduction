@@ -30,4 +30,5 @@
 - 圖片與音檔會上傳到 Google Drive，網址寫回 Google Sheet。
 - 後台可直接修改 SHEET_ID、ADMIN_PASSWORD、DRIVE_FOLDER_ID，不一定要進 Script Properties 手動改。
 - 後台可刪除單一圖片或音檔，刪除時會同步把 Google Drive 檔案移到垃圾桶。
+- 預設登入密碼是 puping2026，登入後可在後台改成你的新密碼。
 - 全站不需要自架主機，不用電腦常駐。
