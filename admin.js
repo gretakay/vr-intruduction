@@ -388,6 +388,9 @@ async function initialize() {
     return;
   }
 
+  // 安全模式：每次進入後台都要求重新登入，避免舊 token 造成誤判
+  setToken("");
+
   const setupState = await postAction({ action: "getSystemSettings" });
   if (setupState.needsSetup) {
     fillSystemInputs(setupState);
