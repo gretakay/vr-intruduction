@@ -21,6 +21,9 @@ const noticeEl = document.getElementById("notice");
 
 const API_BASE_URL = window.APP_CONFIG?.API_BASE_URL || "";
 const TOKEN_KEY = "vt_admin_token";
+const MAX_IMAGE_EDGE_PX = 1600;
+const IMAGE_UPLOAD_QUALITY = 0.82;
+const AUDIO_WARN_SIZE_MB = 8;
 
 const state = {
   config: {
@@ -67,6 +70,15 @@ function setToken(token) {
     return;
   }
   localStorage.setItem(TOKEN_KEY, token);
+}
+
+function bytesToMb(bytes) {
+  return Number(bytes / (1024 * 1024)).toFixed(1);
+}
+
+function setButtonBusy(button, busy, idleText, busyText) {
+  button.disabled = busy;
+  button.textContent = busy ? busyText : idleText;
 }
 
 function fillSystemInputs(system) {
@@ -126,6 +138,53 @@ function fileToBase64(file) {
     reader.onerror = () => reject(new Error("檔案讀取失敗"));
     reader.readAsDataURL(file);
   });
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("檔案讀取失敗"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("圖片解析失敗"));
+    img.src = dataUrl;
+  });
+}
+
+async function buildImagePayload(file) {
+  const dataUrl = await fileToDataUrl(file);
+  const image = await loadImage(dataUrl);
+
+  const width = image.naturalWidth || image.width;
+  const height = image.naturalHeight || image.height;
+  const scale = Math.min(1, MAX_IMAGE_EDGE_PX / Math.max(width, height));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(width * scale));
+  canvas.height = Math.max(1, Math.round(height * scale));
+
+  const context = canvas.getContext("2d");
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+  const mime = "image/jpeg";
+  const compressedDataUrl = canvas.toDataURL(mime, IMAGE_UPLOAD_QUALITY);
+  const commaIndex = compressedDataUrl.indexOf(",");
+  const base64 = commaIndex >= 0 ? compressedDataUrl.slice(commaIndex + 1) : "";
+
+  return {
+    name: file.name.replace(/\.[^.]+$/, ".jpg"),
+    mime,
+    base64,
+    originalBytes: file.size,
+    compressedBytes: Math.round((base64.length * 3) / 4)
+  };
 }
 
 function exhibitRowTemplate(exhibit) {
@@ -199,6 +258,9 @@ function exhibitRowTemplate(exhibit) {
   });
 
   uploadBtn.addEventListener("click", async () => {
+    const uploadIdleText = "上傳圖片/語音";
+    setButtonBusy(uploadBtn, true, uploadIdleText, "上傳中...");
+
     try {
       const imageFile = wrap.querySelector(".image-file").files?.[0];
       const audioFile = wrap.querySelector(".audio-file").files?.[0];
@@ -214,15 +276,28 @@ function exhibitRowTemplate(exhibit) {
         id: exhibit.id
       };
 
+      const startedAt = Date.now();
+
       if (imageFile) {
+        const compressedImage = await buildImagePayload(imageFile);
         payload.image = {
-          name: imageFile.name,
-          mime: imageFile.type || "image/jpeg",
-          base64: await fileToBase64(imageFile)
+          name: compressedImage.name,
+          mime: compressedImage.mime,
+          base64: compressedImage.base64
         };
+
+        if (compressedImage.originalBytes > compressedImage.compressedBytes) {
+          showNotice(
+            `圖片已壓縮：${bytesToMb(compressedImage.originalBytes)}MB -> ${bytesToMb(compressedImage.compressedBytes)}MB`
+          );
+        }
       }
 
       if (audioFile) {
+        if (audioFile.size > AUDIO_WARN_SIZE_MB * 1024 * 1024) {
+          showNotice(`音檔 ${bytesToMb(audioFile.size)}MB 較大，上傳可能需較久`, "error");
+        }
+
         payload.audio = {
           name: audioFile.name,
           mime: audioFile.type || "audio/mpeg",
@@ -232,9 +307,12 @@ function exhibitRowTemplate(exhibit) {
 
       await postAction(payload);
       await fetchStore();
-      showNotice("檔案已上傳並寫入 Google Sheet");
+      const seconds = ((Date.now() - startedAt) / 1000).toFixed(1);
+      showNotice(`檔案已上傳並寫入 Google Sheet（${seconds} 秒）`);
     } catch (error) {
       showNotice(error.message || "上傳失敗", "error");
+    } finally {
+      setButtonBusy(uploadBtn, false, uploadIdleText, "上傳中...");
     }
   });
 
