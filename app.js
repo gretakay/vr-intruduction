@@ -74,10 +74,14 @@ function buildAudioCandidates(url) {
     return [url].filter(Boolean);
   }
 
-  return [
+  const candidates = [
+    `https://drive.usercontent.google.com/download?id=${fileId}&export=download&confirm=t`,
+    `https://docs.google.com/uc?export=open&id=${fileId}`,
     `https://drive.google.com/uc?export=media&id=${fileId}`,
     `https://drive.google.com/uc?export=download&id=${fileId}`
   ];
+
+  return [...new Set(candidates)];
 }
 
 function switchToNextAudioSource() {
