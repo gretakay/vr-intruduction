@@ -1,6 +1,6 @@
 const state = {
   config: {
-    title: "歡迎來到某某某展場",
+    title: "歡迎來到普平展場",
     logoUrl: ""
   },
   exhibits: [],
@@ -41,8 +41,8 @@ function formatLoadError(error) {
 }
 
 function renderSiteHeader() {
-  siteTitleEl.textContent = state.config.title || "歡迎來到某某某展場";
-  document.title = state.config.title || "虛擬導覽";
+  siteTitleEl.textContent = state.config.title || "歡迎來到普平展場";
+  document.title = state.config.title || "普平展場虛擬導覽";
 
   if (state.config.logoUrl) {
     siteLogoEl.src = normalizeDriveImageUrl(state.config.logoUrl);
