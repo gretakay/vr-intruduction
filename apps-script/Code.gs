@@ -224,8 +224,8 @@ function loadStore_() {
     exhibits.push({
       id: id,
       name: String(row[1] || "").trim(),
-      imageUrl: String(row[2] || "").trim(),
-      audioUrl: String(row[3] || "").trim()
+      imageUrl: normalizeImageUrl_(String(row[2] || "").trim()),
+      audioUrl: normalizeAudioUrl_(String(row[3] || "").trim())
     });
   }
 
@@ -376,9 +376,27 @@ function createDriveFile_(folder, filePayload) {
 
 function drivePublicUrl_(fileId, isImage) {
   if (isImage) {
-    return "https://drive.google.com/uc?export=view&id=" + fileId;
+    // Use googleusercontent direct image URL for better frontend compatibility.
+    return "https://lh3.googleusercontent.com/d/" + fileId + "=w2000";
   }
-  return "https://drive.google.com/uc?export=download&id=" + fileId;
+  // Use media export for direct audio streaming in <audio>.
+  return "https://drive.google.com/uc?export=media&id=" + fileId;
+}
+
+function normalizeImageUrl_(url) {
+  const fileId = extractDriveFileId_(url);
+  if (!fileId) {
+    return url;
+  }
+  return "https://lh3.googleusercontent.com/d/" + fileId + "=w2000";
+}
+
+function normalizeAudioUrl_(url) {
+  const fileId = extractDriveFileId_(url);
+  if (!fileId) {
+    return url;
+  }
+  return "https://drive.google.com/uc?export=media&id=" + fileId;
 }
 
 function findExhibitRow_(sheet, id) {

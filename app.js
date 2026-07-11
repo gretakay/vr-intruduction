@@ -132,7 +132,14 @@ async function loadPublicData() {
 }
 
 playBtnEl.addEventListener("click", () => {
-  audioPlayerEl.play().catch(() => {});
+  audioPlayerEl.play().catch(() => {
+    stageTitleEl.textContent = `${stageTitleEl.textContent}（語音播放失敗）`;
+  });
+});
+
+audioPlayerEl.addEventListener("error", () => {
+  playBtnEl.disabled = true;
+  stageTitleEl.textContent = `${stageTitleEl.textContent}（語音連結無法播放）`;
 });
 
 loadPublicData().catch((error) => {
